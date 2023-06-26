@@ -189,6 +189,11 @@
       <artifactId>commons-io</artifactId>
       <scope>compile</scope>
     </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-api</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>
@@ -347,5 +352,49 @@
       </plugin>
      </plugins>
   </build>
+
+  <profiles>
+    <profile>
+      <id>mutation</id>
+      <activation>
+        <activeByDefault>false</activeByDefault>
+      </activation>
+      <properties>
+        <withHistory>true</withHistory>
+        <pitest.version>1.8.0</pitest.version>
+      </properties>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.pitest</groupId>
+            <artifactId>pitest-maven</artifactId>
+            <version>${pitest.version}</version>
+            <configuration>
+              <timeoutConstant>6000</timeoutConstant>
+              <targetClasses>
+                <param>org.apache.zookeeper.common.PathUtils</param>
+              </targetClasses>
+              <targetTests>
+                <param>org.apache.zookeeper.common.pathUtilsTest.ValidatePathTest</param>
+              </targetTests>
+
+              <avoidCallsTo>
+                <avoidCallsTo>org.slf4j</avoidCallsTo>
+              </avoidCallsTo>
+            </configuration>
+            <executions>
+              <execution>
+                <id>Mutation report</id>
+                <phase>test-compile</phase>
+                <goals>
+                  <goal>mutationCoverage</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 
 </project>
