@@ -373,9 +373,12 @@
               <timeoutConstant>6000</timeoutConstant>
               <targetClasses>
                 <param>org.apache.zookeeper.common.PathUtils</param>
+                <param>org.apache.zookeeper.server.DataTree</param>
               </targetClasses>
               <targetTests>
                 <param>org.apache.zookeeper.common.pathUtilsTest.ValidatePathTest</param>
+                <param>org.apache.zookeeper.server.dataTreeTest.CreateNodeTest</param>
+                <param>org.apache.zookeeper.server.dataTreeTest.DeleteNodeTest</param>
               </targetTests>
 
               <avoidCallsTo>
