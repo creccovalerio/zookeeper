@@ -33,7 +33,7 @@ public class CreateNodeTest {
     private DataTree dtEphemeralChild;
     private DataTree dtCVersion;
     private DataTree dtEphemeralParent;
-    String[] pathElements;
+    String[] pathNodes;
     private int testType = 0;
     private final Class<? extends Exception> expectedException;
     private int nEphemeral;
@@ -55,24 +55,23 @@ public class CreateNodeTest {
             this.dtValidPath = new DataTree();
 
             //Create Tree all not ephemeral nodes
-            this.pathElements = splitPath(path);
-            int n = pathElements.length;
-            String newPath;
-            String oldPath = "/";
-            String parent = "/";
+            this.pathNodes = splitPath(path);
+            int n = pathNodes.length;
+            String currentPath;
+            String prevPath = "/";
+            String nodeParent = "/";
             int count = 1;
 
-            for (String pathElement : pathElements) {
-                newPath = oldPath + pathElement;
+            for (String pathElement : pathNodes) {
+                currentPath = prevPath + pathElement;
                 if (count == (n)) {
                     break;
                 }
-                System.out.println("NEW PATH: " + newPath);
-                this.dtValidPath.createNode(newPath, new byte[1000], ZooDefs.Ids.CREATOR_ALL_ACL, 0, dtValidPath.getNode(parent).stat.getCversion(), 0, 1);
-                oldPath = newPath;
-                parent = newPath;
+                this.dtValidPath.createNode(currentPath, new byte[1000], ZooDefs.Ids.CREATOR_ALL_ACL, 0, dtValidPath.getNode(nodeParent).stat.getCversion(), 0, 1);
+                prevPath = currentPath;
+                nodeParent = currentPath;
                 if (count != 1) {
-                    oldPath += "/";
+                    prevPath += "/";
                     count++;
                     continue;
                 }
@@ -80,12 +79,16 @@ public class CreateNodeTest {
             }
             this.nNodes = n;
         }else if(testType == 2){
+            // testing invalid paths
             this.dtInvalidPath = new DataTree();
         } else if (testType == 3) {
+            // testing number of ephemeral child
             this.dtEphemeralChild = new DataTree();
         } else if(testType == 4){
+            // testing CVersion
             this.dtCVersion = new DataTree();
         }else if(testType == 5 || testType == 6){
+            // testing ephemeral parent
             this.dtEphemeralParent = new DataTree();
             this.dtEphemeralParent.createNode("/.zn1", new byte[300], ZooDefs.Ids.CREATOR_ALL_ACL, 2, dtEphemeralParent.getNode("/").stat.getCversion(), 1, 1);
         }
@@ -102,13 +105,13 @@ public class CreateNodeTest {
     public static Collection<Object[]> getParameters() {
         return Arrays.asList(new Object[][]{
                 // testing if path is valid
-                //NO EPHEMERAL NODE
+                //non-ephemeral node
                 {"/zn1"                               , new byte[1]      , ZooDefs.Ids.CREATOR_ALL_ACL, 0                   ,  3,     1,       1, 1, null},
-                //EPHEMERAL NODE
+                //ephemeral node
                 {"/zn2"                               , new byte[10000]  , ZooDefs.Ids.OPEN_ACL_UNSAFE, 1                   ,  0,     1,       1, 1, null},
-                //NO EPHEMERAL NODE
+                //non-ephemeral node
                 {"/zn3"                               , new byte[0]      , ZooDefs.Ids.CREATOR_ALL_ACL, 0                   , -1,     1,       1, 1, null},
-                //EPHEMERAL NODE
+                //ephemeral node
                 {"/zn4"                               , null             , ZooDefs.Ids.READ_ACL_UNSAFE, 1                   ,  0,     1,       1, 1, null},
 
                 // testing if path is invalid
@@ -119,33 +122,34 @@ public class CreateNodeTest {
                 {"/zn1/zn2"                           , new byte[1000]   , ZooDefs.Ids.READ_ACL_UNSAFE, 1                   , 1,      1 ,      1, 2, null},
 
                 // testing ephemeral child
+                //non-ephemeral node
                 {"/zn1"                               , new byte[1]      , ZooDefs.Ids.CREATOR_ALL_ACL, 0                   ,  3,     1,       1, 3, null},
-                //EPHEMERAL NODE
+                //ephemeral node
                 {"/zn2"                               , new byte[10000]  , ZooDefs.Ids.OPEN_ACL_UNSAFE, 1                   ,  0,     1,       1, 3, null},
-                //NO EPHEMERAL NODE
+                //non-ephemeral node
                 {"/zn3"                               , new byte[0]      , ZooDefs.Ids.CREATOR_ALL_ACL, 0                   , -1,     1,       1, 3, null},
-                //EPHEMERAL NODE
+                //ephemeral node
                 {"/zn4"                               , null             , ZooDefs.Ids.READ_ACL_UNSAFE, 1                   ,  0,     1,       1, 3, null},
 
                 // testing CVersion
-                // testing ephemeral child
+                //non-ephemeral node
                 {"/zn1"                               , new byte[1]      , ZooDefs.Ids.CREATOR_ALL_ACL, 0                   ,  3,     1,       1, 4, null},
-                //EPHEMERAL NODE
+                //ephemeral node
                 {"/zn2"                               , new byte[10000]  , ZooDefs.Ids.OPEN_ACL_UNSAFE, 1                   ,  0,     1,       1, 4, null},
-                //NO EPHEMERAL NODE
+                //non-ephemeral node
                 {"/zn3"                               , new byte[0]      , ZooDefs.Ids.CREATOR_ALL_ACL, 0                   , -2,     1,       1, 4, null},
-                //EPHEMERAL NODE
+                //ephemeral node
                 {"/zn4"                               , null             , ZooDefs.Ids.READ_ACL_UNSAFE, 1                   ,  0,     1,       1, 4, null},
 
                 //{"/.zn1/.zn2"                       , new byte[1000]   , ZooDefs.Ids.OPEN_ACL_UNSAFE, 0, 0, 1, 1, 5, null},
                 //{"/.zn1/.zn2"                       , new byte[1000]   , ZooDefs.Ids.READ_ACL_UNSAFE, 2, 0, 1, 1, 6, null},
 
                 // increasing coverage
-                //TTL NODE
+                //TTL node
                 {"/zn.1/zn.2"                         , new byte[10000]  , ZooDefs.Ids.CREATOR_ALL_ACL, 0xff00000000000001L ,  0,     0,       1, 1, null},
-                //TTL NODE
+                //TTL node
                 {"/zn5/zn6/zn7/zn8"                   , new byte[1000000], ZooDefs.Ids.READ_ACL_UNSAFE, 0xff00000000000001L ,  0,     0,       1, 1, null},
-                //CONTAINER NODE
+                //CONTAINER node
                 {"/zn5/zn6/zn7/zn8/zn9/zn10/zn11/zn12", new byte[1000000], ZooDefs.Ids.READ_ACL_UNSAFE, 0x8000000000000000L ,  0,     0,       1, 1, null}
         });
     }
@@ -176,7 +180,7 @@ public class CreateNodeTest {
 
     }
 
-    //next iteration
+    //increasing coverage
     @Test
     public void testAlreadyExists() {
 
@@ -184,14 +188,13 @@ public class CreateNodeTest {
             Exception error = null;
             try {
                 // dummmy test of duplicate node
-                if(this.path.equals("/abc")){
+                if(this.path.equals("/zn2")){
                     this.dtValidPath.createNode(this.path, this.data, this.acl, this.ephemeralOwner, this.parentCVersion, this.zxid, this.time);
                     this.dtValidPath.createNode(this.path, this.data, this.acl, this.ephemeralOwner, this.parentCVersion, this.zxid, this.time);
                 }
             } catch (KeeperException.NodeExistsException | KeeperException.NoNodeException e) {
                 error = e;
             }
-            //Assert.assertNotNull(error);
             if(error != null){
                 Assert.assertEquals(KeeperException.NodeExistsException.class, error.getClass());
             }
@@ -203,7 +206,6 @@ public class CreateNodeTest {
         if(testType == 3){
             this.dtEphemeralChild.createNode(this.path, this.data, this.acl, this.ephemeralOwner, this.parentCVersion, this.zxid, this.time);
             nEphemeral = this.dtEphemeralChild.getEphemerals().size();
-            System.out.println("N_EPHE: " + nEphemeral);
             if(this.ephemeralOwner != 0){
                 Assert.assertEquals(1, nEphemeral);
             }else{
@@ -220,7 +222,6 @@ public class CreateNodeTest {
             n = root.stat.getCversion();
             this.dtCVersion.createNode(this.path, this.data, this.acl, this.ephemeralOwner, this.parentCVersion, this.zxid, this.time);
             root = this.dtCVersion.getNode("/");
-            System.out.println("PCV: " + this.parentCVersion + " RSCV: " + root.stat.getCversion());
             if(n <= this.parentCVersion)
                 Assert.assertEquals(this.parentCVersion, root.stat.getCversion());
             if(n > this.parentCVersion) {
@@ -232,7 +233,7 @@ public class CreateNodeTest {
     }
 
     /*@Test
-    public void testEphemeralNode() {
+    public void testEphemeralNode(){
         if(testType == 5){
             if(expectedException == null){
                 Assertions.assertDoesNotThrow(() -> {
@@ -246,7 +247,7 @@ public class CreateNodeTest {
 
 
     @Test
-    public void testChildEphemeral() throws KeeperException.NoNodeException, KeeperException.NodeExistsException {
+    public void testChildEphemeral(){
         if(testType == 6){
             if(expectedException == null){
                 Assertions.assertDoesNotThrow(() -> {
