@@ -1,8 +1,10 @@
 package org.apache.zookeeper.server.dataTreeTest;
 
 import org.apache.zookeeper.KeeperException;
+import org.apache.zookeeper.Quotas;
 import org.apache.zookeeper.ZooDefs;
 import org.apache.zookeeper.data.ACL;
+import org.apache.zookeeper.data.Stat;
 import org.apache.zookeeper.server.DataNode;
 import org.apache.zookeeper.server.DataTree;
 import org.junit.Assert;
@@ -11,11 +13,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-
+import java.util.*;
 
 
 @RunWith(Parameterized.class)
@@ -33,14 +31,21 @@ public class CreateNodeTest {
     private DataTree dtEphemeralChild;
     private DataTree dtCVersion;
     private DataTree dtEphemeralParent;
+    private DataTree dtQuotas;
+    private DataTree dtStat;
+    private DataTree dtMaxPrefix;
+    private DataTree dataTree;
     String[] pathNodes;
-    private int testType = 0;
+    private int testType;
     private final Class<? extends Exception> expectedException;
     private int nEphemeral;
+    private static Random random = new Random(System.currentTimeMillis());
+    private enum ObjType {
+        NULL, EMPTY, VALID, INVALID
+    }
 
-    public CreateNodeTest(String path, byte[] data, List<ACL> acl, long ephemeralOwner, int parentCVersion, long zxid, long time, int testType, Class<? extends Exception> expectedException) throws KeeperException.NoNodeException, KeeperException.NodeExistsException {
+    public CreateNodeTest(String path, ObjType dataType, List<ACL> acl, long ephemeralOwner, int parentCVersion, long zxid, long time, int testType, Class<? extends Exception> expectedException) throws KeeperException.NoNodeException, KeeperException.NodeExistsException {
         this.path = path;
-        this.data = data;
         this.acl = acl;
         this.ephemeralOwner = ephemeralOwner;
         this.parentCVersion = parentCVersion;
@@ -49,6 +54,21 @@ public class CreateNodeTest {
         this.testType = testType;
         this.expectedException = expectedException;
 
+        switch(dataType) {
+            case NULL:
+                this.data = null;
+                break;
+            case EMPTY:
+                this.data = new byte[0];
+                break;
+            case VALID:
+                this.data = new byte[500];
+                break;
+            case INVALID:
+                this.data = new byte[100000000];
+                random.nextBytes(this.data);
+                break;
+        }
 
         // testing only valid path
         if(this.testType == 1){
@@ -90,9 +110,24 @@ public class CreateNodeTest {
         }else if(testType == 5 || testType == 6){
             // testing ephemeral parent
             this.dtEphemeralParent = new DataTree();
-            this.dtEphemeralParent.createNode("/.zn1", new byte[300], ZooDefs.Ids.CREATOR_ALL_ACL, 2, dtEphemeralParent.getNode("/").stat.getCversion(), 1, 1);
+            this.dtEphemeralParent.createNode("/.zn1", new byte[300], ZooDefs.Ids.CREATOR_ALL_ACL, 1, dtEphemeralParent.getNode("/").stat.getCversion(), 1, 1);
+        } else if (testType == 7) {
+            this.dtQuotas = new DataTree();
+            this.dtQuotas.createNode(Quotas.quotaZookeeper+"/parent", new byte[0], null, 0, 0,1, 1);
+        }else if (testType == 8) {
+            this.dtStat = new DataTree();
+            this.dtStat.createNode("/zn1", new byte[0], null, 0, 0,1, 1, new Stat());
+        }/*else if(testType == 9){
+            dtMaxPrefix = new DataTree();
+            dtMaxPrefix.createNode(Quotas.quotaZookeeper+"/zn1", new byte[1000000], ZooDefs.Ids.READ_ACL_UNSAFE,0,0,0,1);
+            dtMaxPrefix.createNode(Quotas.quotaZookeeper+"/zn1/zn2", new byte[1000000], ZooDefs.Ids.READ_ACL_UNSAFE,0,0,0,1);
+        }*/else if (testType == 10) {
+            this.dtQuotas = new DataTree();
+            this.dtQuotas.createNode("/parent", new byte[0], null, 0, 0,1, 1);
+        }else if (testType == 11) {
+            this.dtQuotas = new DataTree();
+            this.dataTree = new DataTree();
         }
-
     }
 
     private String[] splitPath(String path) {
@@ -105,55 +140,60 @@ public class CreateNodeTest {
     public static Collection<Object[]> getParameters() {
         return Arrays.asList(new Object[][]{
                 // testing if path is valid
-                //non-ephemeral node
-                {"/zn1"                               , new byte[1]      , ZooDefs.Ids.CREATOR_ALL_ACL, 0                   ,  3,     1,       1, 1, null},
-                //ephemeral node
-                {"/zn2"                               , new byte[10000]  , ZooDefs.Ids.OPEN_ACL_UNSAFE, 1                   ,  0,     1,       1, 1, null},
-                //non-ephemeral node
-                {"/zn3"                               , new byte[0]      , ZooDefs.Ids.CREATOR_ALL_ACL, 0                   , -1,     1,       1, 1, null},
-                //ephemeral node
-                {"/zn4"                               , null             , ZooDefs.Ids.READ_ACL_UNSAFE, 1                   ,  0,     1,       1, 1, null},
+                {"/zn1"                               , ObjType.VALID  , ZooDefs.Ids.CREATOR_ALL_ACL, 0                   ,  3,     1,       1, 1, null},
+                //{"/zn2"                             , ObjType.INVALID, ZooDefs.Ids.OPEN_ACL_UNSAFE, 1                   ,  0,     1,       1, 1, IllegalArgumentException.class},
+                {"/zn2"                               , ObjType.VALID  , ZooDefs.Ids.OPEN_ACL_UNSAFE, 1                   ,  0,     1,       1, 1, null},
+                {"/zn3"                               , ObjType.EMPTY  , ZooDefs.Ids.CREATOR_ALL_ACL, 0                   , -2,     1,       1, 1, null},
+                {"/zn4"                               , ObjType.NULL   , ZooDefs.Ids.READ_ACL_UNSAFE, 1                   ,  0,     1,       1, 1, null},
+                {"/zn5"                               , ObjType.NULL   , ZooDefs.Ids.READ_ACL_UNSAFE, 1                   , -1,     1,       1, 1, null},
+                {"/zn6/zn7"                           , ObjType.VALID  , ZooDefs.Ids.READ_ACL_UNSAFE, 0                   ,  0,     1,       1, 1, null},
 
                 // testing if path is invalid
-                {"zn1"                                , new byte[500]    , new ArrayList<ACL>()       , 0                   , 0,      0 ,      0, 2, StringIndexOutOfBoundsException.class},
-                {"zn1/zn2"                            , new byte[10000]  , null                       , 0xff00000000000001L , 0,     -1 ,      1, 2, KeeperException.NoNodeException.class},
-                {"/../zn1"                            , null             , ZooDefs.Ids.OPEN_ACL_UNSAFE, 0x8000000000000000L , 0,      1 , 100000, 2, KeeperException.NoNodeException.class},
-                {"/zn1/zn2"                           , new byte[1000]   , ZooDefs.Ids.OPEN_ACL_UNSAFE, 0                   , 1,  10000 ,      1, 2, null},
-                {"/zn1/zn2"                           , new byte[1000]   , ZooDefs.Ids.READ_ACL_UNSAFE, 1                   , 1,      1 ,      1, 2, null},
+                {"zn1"                                , ObjType.VALID  , new ArrayList<ACL>()       , 0                   ,  0,      0 ,      0, 2, StringIndexOutOfBoundsException.class},
+                {"zn1/zn2"                            , ObjType.VALID  , null                       , 0xff00000000000001L ,  0,     -1 ,      1, 2, KeeperException.NoNodeException.class},
+                {"/../zn1"                            , ObjType.NULL   , ZooDefs.Ids.OPEN_ACL_UNSAFE, 0x8000000000000000L ,  0,      1 ,  50000, 2, KeeperException.NoNodeException.class},
+                {null                                 , ObjType.VALID  , ZooDefs.Ids.CREATOR_ALL_ACL, -1                  , -1,   5000 ,      1, 2, NullPointerException.class           },
+                {""                                   , ObjType.VALID  , ZooDefs.Ids.READ_ACL_UNSAFE, 0                   ,  1,      1 ,     -1, 2, StringIndexOutOfBoundsException.class},
+                {"/zn1/zn2"                           , ObjType.VALID  , null                       , 0                   ,  0,      1 ,      1, 2, KeeperException.NoNodeException.class},
 
                 // testing ephemeral child
-                //non-ephemeral node
-                {"/zn1"                               , new byte[1]      , ZooDefs.Ids.CREATOR_ALL_ACL, 0                   ,  3,     1,       1, 3, null},
-                //ephemeral node
-                {"/zn2"                               , new byte[10000]  , ZooDefs.Ids.OPEN_ACL_UNSAFE, 1                   ,  0,     1,       1, 3, null},
-                //non-ephemeral node
-                {"/zn3"                               , new byte[0]      , ZooDefs.Ids.CREATOR_ALL_ACL, 0                   , -1,     1,       1, 3, null},
-                //ephemeral node
-                {"/zn4"                               , null             , ZooDefs.Ids.READ_ACL_UNSAFE, 1                   ,  0,     1,       1, 3, null},
+                {"/zn1"                               , ObjType.VALID  , ZooDefs.Ids.CREATOR_ALL_ACL,  0                   ,  3,     1,       1, 3, null},
+                {"/zn2"                               , ObjType.VALID  , ZooDefs.Ids.OPEN_ACL_UNSAFE,  1                   ,  0,     1,       1, 3, null},
+                {"/zn3"                               , ObjType.EMPTY  , ZooDefs.Ids.CREATOR_ALL_ACL,  0                   , -2,     1,       1, 3, null},
+                {"/zn4"                               , ObjType.NULL   , ZooDefs.Ids.READ_ACL_UNSAFE,  1                   ,  0,     1,       1, 3, null},
 
                 // testing CVersion
-                //non-ephemeral node
-                {"/zn1"                               , new byte[1]      , ZooDefs.Ids.CREATOR_ALL_ACL, 0                   ,  3,     1,       1, 4, null},
-                //ephemeral node
-                {"/zn2"                               , new byte[10000]  , ZooDefs.Ids.OPEN_ACL_UNSAFE, 1                   ,  0,     1,       1, 4, null},
-                //non-ephemeral node
-                {"/zn3"                               , new byte[0]      , ZooDefs.Ids.CREATOR_ALL_ACL, 0                   , -2,     1,       1, 4, null},
-                //ephemeral node
-                {"/zn4"                               , null             , ZooDefs.Ids.READ_ACL_UNSAFE, 1                   ,  0,     1,       1, 4, null},
+                {"/zn1"                               , ObjType.VALID  , ZooDefs.Ids.CREATOR_ALL_ACL, 0                   ,  3,     1,       1, 4, null},
+                {"/zn2"                               , ObjType.VALID  , ZooDefs.Ids.OPEN_ACL_UNSAFE, 1                   ,  0,     1,       1, 4, null},
+                {"/zn3"                               , ObjType.VALID  , ZooDefs.Ids.CREATOR_ALL_ACL, 0                   , -2,     1,       1, 4, null},
+                {"/zn4"                               , ObjType.NULL   , ZooDefs.Ids.READ_ACL_UNSAFE, 1                   ,  0,     1,       1, 4, null},
 
-                //{"/.zn1/.zn2"                       , new byte[1000]   , ZooDefs.Ids.OPEN_ACL_UNSAFE, 0, 0, 1, 1, 5, null},
-                //{"/.zn1/.zn2"                       , new byte[1000]   , ZooDefs.Ids.READ_ACL_UNSAFE, 2, 0, 1, 1, 6, null},
+                //{"/.zn1/.zn2"                       , ObjType.VALID  , ZooDefs.Ids.OPEN_ACL_UNSAFE, 0, 0, 1, 1, 5, null},
+                //{"/.zn1/.zn2"                       , ObjType.VALID  , ZooDefs.Ids.READ_ACL_UNSAFE, 1, 0, 1, 1, 6, null},
 
                 // increasing coverage
+                {"/zn10"                              , ObjType.VALID  , ZooDefs.Ids.OPEN_ACL_UNSAFE, 0                   ,  0,     1,       1, 1, null},
                 //TTL node
-                {"/zn.1/zn.2"                         , new byte[10000]  , ZooDefs.Ids.CREATOR_ALL_ACL, 0xff00000000000001L ,  0,     0,       1, 1, null},
+                {"/zn.1/zn.2"                         , ObjType.VALID  , ZooDefs.Ids.CREATOR_ALL_ACL, 0xff00000000000001L ,  0,     0,       1, 1, null},
                 //TTL node
-                {"/zn5/zn6/zn7/zn8"                   , new byte[1000000], ZooDefs.Ids.READ_ACL_UNSAFE, 0xff00000000000001L ,  0,     0,       1, 1, null},
+                {"/zn5/zn6/zn7/zn8"                   , ObjType.VALID  , ZooDefs.Ids.READ_ACL_UNSAFE, 0xff00000000000001L ,  0,     0,       1, 1, null},
                 //CONTAINER node
-                {"/zn5/zn6/zn7/zn8/zn9/zn10/zn11/zn12", new byte[1000000], ZooDefs.Ids.READ_ACL_UNSAFE, 0x8000000000000000L ,  0,     0,       1, 1, null}
+                {"/zn5/zn6/zn7/zn8/zn9", ObjType.VALID  , ZooDefs.Ids.READ_ACL_UNSAFE, 0x8000000000000000L ,  0,     0,       1, 1, null},
+
+                {Quotas.quotaZookeeper+"/parent"+"/"+Quotas.limitNode  , ObjType.VALID, null, 0, 0, 1, 0, 7, null},
+                {Quotas.quotaZookeeper+"/parent"+"/"+Quotas.statNode   , ObjType.VALID, null, 0, 0, 1, 0, 7, null},
+
+                {"/zn1/zn2", ObjType.VALID, null, 0, 0, 1, 0, 8, null},
+
+                // killing mutants
+                {"/parent"+"/"+Quotas.limitNode  , ObjType.VALID, null, 0, 0, 1, 0, 10, null},
+                {"/parent"+"/"+Quotas.statNode   , ObjType.VALID, null, 0, 0, 1, 0, 10, null},
+                {"/parent"+"/abc"                , ObjType.VALID, null, 0, 0, 1, 0, 10, null},
+                {Quotas.quotaZookeeper+"/parent"   , ObjType.VALID, null, 0, 0, 1, 0, 11, null},
+
+
         });
     }
-
 
     @Test
     public void test() {
@@ -177,7 +217,6 @@ public class CreateNodeTest {
                 });
             }
         }
-
     }
 
     //increasing coverage
@@ -188,7 +227,7 @@ public class CreateNodeTest {
             Exception error = null;
             try {
                 // dummmy test of duplicate node
-                if(this.path.equals("/zn2")){
+                if(this.path.equals("/zn10")){
                     this.dtValidPath.createNode(this.path, this.data, this.acl, this.ephemeralOwner, this.parentCVersion, this.zxid, this.time);
                     this.dtValidPath.createNode(this.path, this.data, this.acl, this.ephemeralOwner, this.parentCVersion, this.zxid, this.time);
                 }
@@ -229,7 +268,66 @@ public class CreateNodeTest {
                 Assert.assertEquals(n, root.stat.getCversion());
             }
         }
+    }
 
+    @Test
+    public void testCreateQuota() {
+        if(testType == 7){
+            if(expectedException == null){
+                Assertions.assertDoesNotThrow(() -> {
+                    this.dtQuotas.createNode(this.path, this.data, this.acl, this.ephemeralOwner, this.parentCVersion, this.zxid, this.time);
+                    Assert.assertEquals(1, this.dtQuotas.getNode(Quotas.quotaZookeeper).getChildren().size());
+                });
+            }
+        }
+    }
+
+    @Test
+    public void testCreateStat() {
+        if(testType == 8){
+            if(expectedException == null){
+                Assertions.assertDoesNotThrow(() -> {
+                    this.dtStat.createNode(this.path, this.data, this.acl, this.ephemeralOwner, this.parentCVersion, this.zxid, this.time);
+                    Assert.assertEquals(1, this.dtStat.getNode("/zn1").getChildren().size());
+                });
+            }
+        }
+    }
+
+    /*@Test
+    public void testMaxPrefix() {
+        if(testType == 9){
+            if(expectedException == null){
+                Assertions.assertDoesNotThrow(() -> {
+                    this.dtMaxPrefix.createNode(this.path, this.data, this.acl, this.ephemeralOwner, this.parentCVersion, this.zxid, this.time);
+                    Assert.assertEquals(1, this.dtMaxPrefix.getNode(Quotas.quotaZookeeper+"/zn1/zn2").getChildren().size());
+                });
+            }
+        }
+    }*/
+
+    @Test
+    public void testMutations() {
+        if(testType == 10){
+            if(expectedException == null){
+                Assertions.assertDoesNotThrow(() -> {
+                    this.dtQuotas.createNode(this.path, this.data, this.acl, this.ephemeralOwner, this.parentCVersion, this.zxid, this.time);
+                    Assert.assertEquals(1, this.dtQuotas.getNode("/parent").getChildren().size());
+                });
+            }
+        }
+    }
+
+    @Test
+    public void testMutations2() {
+        if(testType == 11){
+            if(expectedException == null){
+                Assertions.assertDoesNotThrow(() -> {
+                    this.dataTree.createNode(this.path, this.data, this.acl, this.ephemeralOwner, this.parentCVersion, this.zxid, this.time);
+                    Assert.assertEquals(1, this.dataTree.getNode(Quotas.quotaZookeeper).getChildren().size());
+                });
+            }
+        }
     }
 
     /*@Test

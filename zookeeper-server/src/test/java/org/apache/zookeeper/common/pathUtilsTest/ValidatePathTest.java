@@ -31,6 +31,9 @@ public class ValidatePathTest {
                 { "zn1/zn2"      , IllegalArgumentException.class }, //4
                 { ""             , IllegalArgumentException.class }, //5
                 // increasing coverage
+
+                // invalid
+
                 {"/.."           , IllegalArgumentException.class }, //6
                 {"/zn1/.."       , IllegalArgumentException.class }, //7
                 {"zn1/../zn2"    , IllegalArgumentException.class }, //8
@@ -40,27 +43,35 @@ public class ValidatePathTest {
                 {"/zn1/./zn2"    , IllegalArgumentException.class }, //12
                 {"zn1/zn2/."     , IllegalArgumentException.class }, //13
                 {"/."            , IllegalArgumentException.class }, //14
-                {"/\u0000"       , IllegalArgumentException.class }, //15
-                {"/\u0001"       , IllegalArgumentException.class }, //16
-                {"/\u001F"       , IllegalArgumentException.class }, //17
-                {"/\u007F"       , IllegalArgumentException.class }, //18
-                {"/\ud800"       , IllegalArgumentException.class }, //19
-                {"/\uF8FF"       , IllegalArgumentException.class }, //20
-                {"/\uFFF0"       , IllegalArgumentException.class }, //21
-                {"/\uFFFF"       , IllegalArgumentException.class }, //22
-                {"/\u008f"       , IllegalArgumentException.class }, //22
-                {"/\ufff5"       , IllegalArgumentException.class }, //22
 
-                {"/zn.1"         , null                           }, //23
-                {"/.zn1"         , null                           }, //24
-                {"/zn1."         , null                           }, //25
-                {"/"             , null                           }  //26
+                {"/\u0000"       , IllegalArgumentException.class }, //15
+                {"/\u001e"       , IllegalArgumentException.class }, //16
+                {"/\u0001"       , IllegalArgumentException.class }, //16
+                {"/\u001f"       , IllegalArgumentException.class }, //17
+                {"/\u007f"       , IllegalArgumentException.class }, //19
+                {"/\u009f"       , IllegalArgumentException.class }, //21
+                {"/\ud800"       , IllegalArgumentException.class }, //22
+                {"/\ud801"       , IllegalArgumentException.class }, //23
+                {"/\uf8ff"       , IllegalArgumentException.class }, //24
+                {"/\uFFF0"       , IllegalArgumentException.class }, //25
+                {"/\ufff5"       , IllegalArgumentException.class }, //26
+                {"/\uFFFF"       , IllegalArgumentException.class }, //27
+
+                // valid
+                {"/zn.1"         , null                           }, //30
+                {"/.zn1"         , null                           }, //31
+                {"/zn1."         , null                           }, //32
+                {"/"             , null                           }, //33
+
+                // invalid
+                { "/zn1//zn2"    , IllegalArgumentException.class }, //34
+                { "/zn1/../zn2"  , IllegalArgumentException.class }, //35
+
         });
     }
 
     @Test
     public void testValidPath(){
-
         if(expectedException == null){
             Assertions.assertDoesNotThrow(() -> {
                 PathUtils.validatePath(this.inputValidPath);
