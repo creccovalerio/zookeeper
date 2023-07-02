@@ -374,11 +374,13 @@
               <targetClasses>
                 <param>org.apache.zookeeper.common.PathUtils</param>
                 <param>org.apache.zookeeper.server.DataTree</param>
+                <param>org.apache.zookeeper.ZKUtil</param>
               </targetClasses>
               <targetTests>
                 <param>org.apache.zookeeper.common.pathUtilsTest.ValidatePathTest</param>
                 <param>org.apache.zookeeper.server.dataTreeTest.CreateNodeTest</param>
                 <param>org.apache.zookeeper.server.dataTreeTest.DeleteNodeTest</param>
+                <param>org.apache.zookeeper.zkUtilTest.ListSubTreeBFSTest</param>
               </targetTests>
 
               <avoidCallsTo>
