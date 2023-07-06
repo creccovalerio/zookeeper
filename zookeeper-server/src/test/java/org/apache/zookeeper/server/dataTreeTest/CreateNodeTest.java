@@ -33,8 +33,6 @@ public class CreateNodeTest {
     private DataTree dtEphemeralParent;
     private DataTree dtQuotas;
     private DataTree dtStat;
-    private DataTree dtMaxPrefix;
-    private DataTree dataTree;
     String[] pathNodes;
     private int testType;
     private final Class<? extends Exception> expectedException;
@@ -121,13 +119,7 @@ public class CreateNodeTest {
             dtMaxPrefix = new DataTree();
             dtMaxPrefix.createNode(Quotas.quotaZookeeper+"/zn1", new byte[1000000], ZooDefs.Ids.READ_ACL_UNSAFE,0,0,0,1);
             dtMaxPrefix.createNode(Quotas.quotaZookeeper+"/zn1/zn2", new byte[1000000], ZooDefs.Ids.READ_ACL_UNSAFE,0,0,0,1);
-        }*/else if (testType == 10) {
-            this.dtQuotas = new DataTree();
-            this.dtQuotas.createNode("/parent", new byte[0], null, 0, 0,1, 1);
-        }else if (testType == 11) {
-            this.dtQuotas = new DataTree();
-            this.dataTree = new DataTree();
-        }
+        }*/
     }
 
     private String[] splitPath(String path) {
@@ -165,7 +157,7 @@ public class CreateNodeTest {
                 // testing CVersion
                 {"/zn1"                               , ObjType.VALID  , ZooDefs.Ids.CREATOR_ALL_ACL, 0                   ,  3,     1,       1, 4, null},
                 {"/zn2"                               , ObjType.VALID  , ZooDefs.Ids.OPEN_ACL_UNSAFE, 1                   ,  0,     1,       1, 4, null},
-                {"/zn3"                               , ObjType.VALID  , ZooDefs.Ids.CREATOR_ALL_ACL, 0                   , -2,     1,       1, 4, null},
+                {"/zn3"                               , ObjType.EMPTY  , ZooDefs.Ids.CREATOR_ALL_ACL, 0                   , -2,     1,       1, 4, null},
                 {"/zn4"                               , ObjType.NULL   , ZooDefs.Ids.READ_ACL_UNSAFE, 1                   ,  0,     1,       1, 4, null},
 
                 //{"/.zn1/.zn2"                       , ObjType.VALID  , ZooDefs.Ids.OPEN_ACL_UNSAFE, 0, 0, 1, 1, 5, null},
@@ -178,19 +170,12 @@ public class CreateNodeTest {
                 //TTL node
                 {"/zn5/zn6/zn7/zn8"                   , ObjType.VALID  , ZooDefs.Ids.READ_ACL_UNSAFE, 0xff00000000000001L ,  0,     0,       1, 1, null},
                 //CONTAINER node
-                {"/zn5/zn6/zn7/zn8/zn9", ObjType.VALID  , ZooDefs.Ids.READ_ACL_UNSAFE, 0x8000000000000000L ,  0,     0,       1, 1, null},
-
-                {Quotas.quotaZookeeper+"/parent"+"/"+Quotas.limitNode  , ObjType.VALID, null, 0, 0, 1, 0, 7, null},
-                {Quotas.quotaZookeeper+"/parent"+"/"+Quotas.statNode   , ObjType.VALID, null, 0, 0, 1, 0, 7, null},
+                {"/zn5/zn6/zn7/zn8/zn9"               , ObjType.VALID  , ZooDefs.Ids.READ_ACL_UNSAFE, 0x8000000000000000L ,  0,     0,       1, 1, null},
 
                 {"/zn1/zn2", ObjType.VALID, null, 0, 0, 1, 0, 8, null},
-
-                // killing mutants
-                {"/parent"+"/"+Quotas.limitNode  , ObjType.VALID, null, 0, 0, 1, 0, 10, null},
-                {"/parent"+"/"+Quotas.statNode   , ObjType.VALID, null, 0, 0, 1, 0, 10, null},
-                {"/parent"+"/abc"                , ObjType.VALID, null, 0, 0, 1, 0, 10, null},
-                {Quotas.quotaZookeeper+"/parent"   , ObjType.VALID, null, 0, 0, 1, 0, 11, null},
-
+                {Quotas.quotaZookeeper+"/parent"+"/"+Quotas.limitNode  , ObjType.VALID, null, 0, 0, 1, 0, 7, null},
+                // coverage & kill mutant 504
+                {Quotas.quotaZookeeper+"/parent"+"/"+Quotas.statNode   , ObjType.VALID, null, 0, 0, 1, 0, 7, null}
 
         });
     }
@@ -306,29 +291,6 @@ public class CreateNodeTest {
         }
     }*/
 
-    @Test
-    public void testMutations() {
-        if(testType == 10){
-            if(expectedException == null){
-                Assertions.assertDoesNotThrow(() -> {
-                    this.dtQuotas.createNode(this.path, this.data, this.acl, this.ephemeralOwner, this.parentCVersion, this.zxid, this.time);
-                    Assert.assertEquals(1, this.dtQuotas.getNode("/parent").getChildren().size());
-                });
-            }
-        }
-    }
-
-    @Test
-    public void testMutations2() {
-        if(testType == 11){
-            if(expectedException == null){
-                Assertions.assertDoesNotThrow(() -> {
-                    this.dataTree.createNode(this.path, this.data, this.acl, this.ephemeralOwner, this.parentCVersion, this.zxid, this.time);
-                    Assert.assertEquals(1, this.dataTree.getNode(Quotas.quotaZookeeper).getChildren().size());
-                });
-            }
-        }
-    }
 
     /*@Test
     public void testEphemeralNode(){

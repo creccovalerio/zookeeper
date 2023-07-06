@@ -33,7 +33,6 @@ public class ValidatePathTest {
                 // increasing coverage
 
                 // invalid
-
                 {"/.."           , IllegalArgumentException.class }, //6
                 {"/zn1/.."       , IllegalArgumentException.class }, //7
                 {"zn1/../zn2"    , IllegalArgumentException.class }, //8
@@ -46,24 +45,23 @@ public class ValidatePathTest {
 
                 {"/\u0000"       , IllegalArgumentException.class }, //15
                 {"/\u001e"       , IllegalArgumentException.class }, //16
-                {"/\u0001"       , IllegalArgumentException.class }, //16
-                {"/\u001f"       , IllegalArgumentException.class }, //17
+                {"/\u0001"       , IllegalArgumentException.class }, //17
+                {"/\u001f"       , IllegalArgumentException.class }, //18
                 {"/\u007f"       , IllegalArgumentException.class }, //19
-                {"/\u009f"       , IllegalArgumentException.class }, //21
-                {"/\ud800"       , IllegalArgumentException.class }, //22
-                {"/\ud801"       , IllegalArgumentException.class }, //23
-                {"/\uf8ff"       , IllegalArgumentException.class }, //24
-                {"/\uFFF0"       , IllegalArgumentException.class }, //25
-                {"/\ufff5"       , IllegalArgumentException.class }, //26
-                {"/\uFFFF"       , IllegalArgumentException.class }, //27
-
+                {"/\u009f"       , IllegalArgumentException.class }, //20
+                {"/\ud800"       , IllegalArgumentException.class }, //21
+                {"/\ud801"       , IllegalArgumentException.class }, //22
+                {"/\uf8ff"       , IllegalArgumentException.class }, //23
+                {"/\uFFF0"       , IllegalArgumentException.class }, //24
+                {"/\ufff5"       , IllegalArgumentException.class }, //25
+                {"/\uFFFF"       , IllegalArgumentException.class }, //26
                 // valid
-                {"/zn.1"         , null                           }, //30
-                {"/.zn1"         , null                           }, //31
-                {"/zn1."         , null                           }, //32
-                {"/"             , null                           }, //33
+                {"/zn.1"         , null                           }, //27
+                {"/.zn1"         , null                           }, //28
+                {"/zn1."         , null                           }, //29
+                {"/"             , null                           }, //30
 
-                // invalid
+                // invalid - increasing coverage - killing mutants
                 { "/zn1//zn2"    , IllegalArgumentException.class }, //34
                 { "/zn1/../zn2"  , IllegalArgumentException.class }, //35
 

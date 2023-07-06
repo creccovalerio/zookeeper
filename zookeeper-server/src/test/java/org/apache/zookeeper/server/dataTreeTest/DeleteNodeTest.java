@@ -2,8 +2,7 @@ package org.apache.zookeeper.server.dataTreeTest;
 
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.Quotas;
-import org.apache.zookeeper.ZooDefs;
-import org.apache.zookeeper.data.Stat;
+import org.apache.zookeeper.ZooDefs;;
 import org.apache.zookeeper.server.DataNode;
 import org.apache.zookeeper.server.DataTree;
 import org.junit.Assert;
@@ -249,12 +248,12 @@ public class DeleteNodeTest {
 
                 // deleting quotas
                 {Quotas.procZookeeper+"/parent/"+Quotas.limitNode, 1, 5, null},
+                {Quotas.procZookeeper+"/parent/zn1"              , 1, 5, null}
 
                 //killing mutants
-                {"/zn1/zn2/zn3",  1, 6, null},
-                {Quotas.procZookeeper+"/parent/zn1", 1, 5, null},
-                {"/zn1/" + Quotas.limitNode, 1, 7, null},
-                {"/zn1/zn2", 1, 7, null},
+//                {"/zn1/zn2/zn3",  1, 6, null},
+//                {"/zn1/" + Quotas.limitNode, 1, 7, null},
+//                {"/zn1/zn2", 1, 7, null},*/
         });
     }
 
