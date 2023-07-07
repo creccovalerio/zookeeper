@@ -119,7 +119,10 @@ public class CreateNodeTest {
             dtMaxPrefix = new DataTree();
             dtMaxPrefix.createNode(Quotas.quotaZookeeper+"/zn1", new byte[1000000], ZooDefs.Ids.READ_ACL_UNSAFE,0,0,0,1);
             dtMaxPrefix.createNode(Quotas.quotaZookeeper+"/zn1/zn2", new byte[1000000], ZooDefs.Ids.READ_ACL_UNSAFE,0,0,0,1);
-        }*/
+        }*/else if (testType == 10) {
+            this.dtQuotas = new DataTree();
+            this.dtQuotas.createNode("/parent", new byte[0], null, 0, 0,1, 1);
+        }
     }
 
     private String[] splitPath(String path) {
@@ -175,7 +178,11 @@ public class CreateNodeTest {
                 {"/zn1/zn2", ObjType.VALID, null, 0, 0, 1, 0, 8, null},
                 {Quotas.quotaZookeeper+"/parent"+"/"+Quotas.limitNode  , ObjType.VALID, null, 0, 0, 1, 0, 7, null},
                 // coverage & kill mutant 504
-                {Quotas.quotaZookeeper+"/parent"+"/"+Quotas.statNode   , ObjType.VALID, null, 0, 0, 1, 0, 7, null}
+                {Quotas.quotaZookeeper+"/parent"+"/"+Quotas.statNode   , ObjType.VALID, null, 0, 0, 1, 0, 7, null},
+
+                {"/parent"+"/"+Quotas.limitNode  , ObjType.VALID, null, 0, 0, 1, 0, 10, null},
+//                {"/parent"+"/"+Quotas.statNode   , ObjType.VALID, null, 0, 0, 1, 0, 10, null},
+//                {"/parent"+"/abc"                , ObjType.VALID, null, 0, 0, 1, 0, 10, null}
 
         });
     }
@@ -290,6 +297,18 @@ public class CreateNodeTest {
             }
         }
     }*/
+
+    @Test
+    public void testMutations() {
+        if(testType == 10){
+            if(expectedException == null){
+                Assertions.assertDoesNotThrow(() -> {
+                    this.dtQuotas.createNode(this.path, this.data, this.acl, this.ephemeralOwner, this.parentCVersion, this.zxid, this.time);
+                    Assert.assertEquals(1, this.dtQuotas.getNode("/parent").getChildren().size());
+                });
+            }
+        }
+    }
 
 
     /*@Test

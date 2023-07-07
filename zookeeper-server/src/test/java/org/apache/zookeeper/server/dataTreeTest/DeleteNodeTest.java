@@ -204,11 +204,15 @@ public class DeleteNodeTest {
             this.dtMutant = new DataTree();
             this.dtMutant.createNode("/zn1", new byte[500], null, 0, 0,1, 1);
             this.dtMutant.createNode("/zn1/zn2", new byte[500], null, 0, 0,1, 1);
-            this.dtMutant.createNode("/zn1/zn2/zn3", new byte[500], null, 1, 0,1, 1);
+            this.dtMutant.createNode("/zn1/zn2/zn3", new byte[500], null, 0x8000000000000000L, 0,1, 1);
         }
         if (testType == 7){
             this.dtMutant = new DataTree();
             this.dtMutant.createNode("/zn1", new byte[500], null, 0, 0,1, 1);
+        }
+        if (testType == 8){
+            this.dtMutant = new DataTree();
+            this.dtMutant.createNode(Quotas.procZookeeper + "/zn1", new byte[500], null, 0, 0,1, 1);
         }
 
     }
@@ -248,12 +252,12 @@ public class DeleteNodeTest {
 
                 // deleting quotas
                 {Quotas.procZookeeper+"/parent/"+Quotas.limitNode, 1, 5, null},
-                {Quotas.procZookeeper+"/parent/zn1"              , 1, 5, null}
+                {Quotas.procZookeeper+"/parent/zn1"              , 1, 5, null},
 
                 //killing mutants
-//                {"/zn1/zn2/zn3",  1, 6, null},
-//                {"/zn1/" + Quotas.limitNode, 1, 7, null},
-//                {"/zn1/zn2", 1, 7, null},*/
+                {"/zn1/zn2/zn3",  1, 6, null},  // kill mutant 574
+                {"/zn1/" + Quotas.limitNode, 1, 7, null}, // kill mutant 588
+                {Quotas.procZookeeper + "/zn1", 1, 8, null} // kill mutant 588x2*/
         });
     }
 
@@ -266,6 +270,7 @@ public class DeleteNodeTest {
                     this.dtEphemeral.deleteNode(this.path, this.zxid);
                     this.dtContainer.deleteNode(this.path, this.zxid);
                     this.dtTTL.deleteNode(this.path, this.zxid);
+                    System.out.println("LEN:" + this.lengthDtValidNodes);
                     assertEquals(this.lengthDtValidNodes-1, this.dtValidNodes.getNodeCount()-4);
                     assertEquals(this.lengthEphemeral-1, this.dtEphemeral.getNodeCount()-4);
                     assertEquals(this.lengthCont-1, this.dtContainer.getNodeCount()-4);
@@ -338,7 +343,8 @@ public class DeleteNodeTest {
             if(expectedException == null){
                 Assertions.assertDoesNotThrow(() -> {
                     this.dtMutant.deleteNode(this.path, this.zxid);
-                    Assert.assertEquals(0, this.dtMutant.getNode("/zn1/zn2").getChildren().size());
+                    this.dtMutant.deleteNode("/zn1/zn2", this.zxid);
+                    Assert.assertEquals(0, this.dtMutant.getContainers().size());
                 });
             }
         }
@@ -357,6 +363,17 @@ public class DeleteNodeTest {
         }
     }
 
+    @Test
+    public void testDeleteMutant3() {
+        if(testType == 8){
+            if(expectedException == null){
+                Assertions.assertDoesNotThrow(() -> {
+                    this.dtMutant.deleteNode(this.path, this.zxid);
+                    Assert.assertEquals(1, this.dtMutant.getNodeCount()-4);
+                });
+            }
+        }
+    }
 
 }
 
