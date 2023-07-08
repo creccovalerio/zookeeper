@@ -33,4 +33,4 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: badua-report
-          path: zookeeper-server/target/badua.xml
+          path: zookeeper-server/target/badua.ser
