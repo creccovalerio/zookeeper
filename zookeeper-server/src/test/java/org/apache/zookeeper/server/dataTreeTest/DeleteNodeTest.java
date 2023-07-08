@@ -257,7 +257,7 @@ public class DeleteNodeTest {
                 //killing mutants
                 {"/zn1/zn2/zn3",  1, 6, null},  // kill mutant 574
                 {"/zn1/" + Quotas.limitNode, 1, 7, null}, // kill mutant 588
-                {Quotas.procZookeeper + "/zn1", 1, 8, null} // kill mutant 588x2*/
+                {Quotas.procZookeeper + "/zn1", 1, 8, null} // kill mutant 588x2
         });
     }
 
@@ -270,7 +270,6 @@ public class DeleteNodeTest {
                     this.dtEphemeral.deleteNode(this.path, this.zxid);
                     this.dtContainer.deleteNode(this.path, this.zxid);
                     this.dtTTL.deleteNode(this.path, this.zxid);
-                    System.out.println("LEN:" + this.lengthDtValidNodes);
                     assertEquals(this.lengthDtValidNodes-1, this.dtValidNodes.getNodeCount()-4);
                     assertEquals(this.lengthEphemeral-1, this.dtEphemeral.getNodeCount()-4);
                     assertEquals(this.lengthCont-1, this.dtContainer.getNodeCount()-4);
